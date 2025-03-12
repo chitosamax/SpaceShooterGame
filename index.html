@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI DEFENDER - Space Shooter Game</title>
+    
+    <!-- Social sharing meta tags -->
+    <meta property="og:title" content="AI DEFENDER - Neural Networks vs. Rogue AI">
+    <meta property="og:description" content="Play AI DEFENDER, an exciting space shooter game where you defend against rogue AI entities!">
+    <meta property="og:image" content="https://yourusername.github.io/ai-defender/screenshot.png"> <!-- You'll need to add a screenshot image -->
+    <meta property="og:url" content="https://yourusername.github.io/ai-defender">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <!-- Load p5.js from CDN with a fallback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    
+    <!-- Fallback if p5.js CDN fails -->
+    <script>
+        // Check if p5 loaded correctly
+        if (typeof p5 === 'undefined') {
+            // Create a new script element
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js';
+            document.head.appendChild(script);
+            console.log("Using fallback p5.js source");
+        }
+    </script>
+    
+    <!-- Load Supabase JS client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #0a1428;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+            box-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+        }
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 20, 40, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #64c8ff;
+            font-family: Arial, sans-serif;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(100, 200, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #64c8ff;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Debug button */
+        #debug-button {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #64c8ff;
+            border: 1px solid #64c8ff;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        /* Social sharing buttons */
+        .share-buttons {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .share-button {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid #64c8ff;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .share-button.twitter {
+            background-color: rgba(29, 161, 242, 0.7);
+        }
+        .share-button img {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <h2>Loading AI DEFENDER</h2>
+        <p>Initializing game...</p>
+    </div>
+    
+    <!-- Supabase configuration -->
+    <script src="supabase-config.js"></script>
+    
+    <!-- Main game script -->
+    <script src="sketch.js"></script>
+    
+    <!-- Debug button (press D to show) -->
+    <button id="debug-button" onclick="showDebugInfo()">Debug Info</button>
+    
+    <!-- Debug refresh button (hidden by default) -->
+    <button id="refresh-button" onclick="refreshLeaderboard()" style="position: fixed; bottom: 10px; right: 120px; background: rgba(0, 0, 0, 0.5); color: #64c8ff; border: 1px solid #64c8ff; padding: 5px 10px; font-size: 12px; cursor: pointer; z-index: 1000; display: none;">Refresh Leaderboard</button>
+    
+    <!-- Social sharing buttons (hidden by default, shown on game over) -->
+    <div class="share-buttons" style="display: none;" id="share-buttons">
+        <button class="share-button twitter" id="share-twitter">
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/twitter.svg" alt="X">
+            Share on X
+        </button>
+    </div>
+    
+    <!-- Debug script -->
+    <script>
+        // Show debug info
+        function showDebugInfo() {
+            console.log("=== DEBUG INFO ===");
+            console.log("Game initialized:", window.gameInitialized);
+            console.log("Game state:", window.gameState);
+            console.log("Supabase initialized:", window.isSupabaseInitialized);
+            
+            // Show alert with basic info
+            alert(
+                "Game initialized: " + (window.gameInitialized || false) + "\n" +
+                "Game state: " + (window.gameState || "unknown") + "\n" +
+                "Supabase initialized: " + (window.isSupabaseInitialized || false) + "\n" +
+                "Check console for more details"
+            );
+            
+            // Show the refresh button
+            document.getElementById('refresh-button').style.display = 'block';
+        }
+        
+        // Refresh leaderboard function
+        function refreshLeaderboard() {
+            console.log("Manual refresh requested");
+            if (window.debugRefreshLeaderboard) {
+                window.debugRefreshLeaderboard()
+                    .then(result => {
+                        alert("Leaderboard refreshed. Check console for details.");
+                        console.log("Refresh result:", result);
+                    })
+                    .catch(err => {
+                        alert("Error refreshing leaderboard: " + err);
+                        console.error("Refresh error:", err);
+                    });
+            } else {
+                alert("Debug refresh function not available");
+            }
+        }
+        
+        // Toggle debug button with D key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'd' || event.key === 'D') {
+                const debugBtn = document.getElementById('debug-button');
+                if (debugBtn) {
+                    debugBtn.style.display = debugBtn.style.display === 'none' ? 'block' : 'none';
+                }
+            }
+        });
+        
+        // Set up share button
+        document.getElementById('share-twitter').addEventListener('click', function() {
+            if (window.shareScoreToX && window.playerInitials && window.score) {
+                window.shareScoreToX(window.playerInitials, window.score, window.difficultyLevel);
+            } else {
+                console.error("Cannot share: missing data or share function");
+            }
+        });
+        
+        // Hide loading overlay after 2 seconds
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
